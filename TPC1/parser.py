@@ -2,7 +2,7 @@
 from time import perf_counter
 import csv
 
-from TPC1.models import Entry, Storage
+from TPC1.storage import Entry, Storage
 
 AGE_OR_TENSION = r"^(1\d{2}|[1-9]\d|\d)$"
 SEX = r"^(M|F)$"
@@ -80,7 +80,8 @@ def main():
 
     print(f"Finished in {stop - start}s")
 
-    print(data.dist_sick_sex())
+    # data.dist_sick_by_gender(display=True)
+    # data.dist_sick_by_age(display=True)
 
 
 if __name__ == '__main__':
