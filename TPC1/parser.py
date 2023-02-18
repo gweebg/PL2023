@@ -1,88 +1,33 @@
+import os
 
-from time import perf_counter
-import csv
+from typing import Callable
 
-from TPC1.storage import Entry, Storage
-
-AGE_OR_TENSION = r"^(1\d{2}|[1-9]\d|\d)$"
-SEX = r"^(M|F)$"
-CHOLESTEROL = r"^([1-9]\d{0,2}|0)$"
-BPM = r"^(?:[0-9]|[1-9][0-9]|[12][0-1][0-9]|220)$"
-SICK = r"^(1|0)$"
+from TPC1.models import Entry
+from TPC1.storage import Storage
 
 
-class Parser:
+def read_csv(file_path: str, validator: Callable[[list[str]], bool]) -> Storage:
 
-    def __init__(self, source: str) -> None:
+    csv_entries: Storage = Storage()
 
-        self.source: str = source
+    if not os.path.isfile(file_path):
+        raise Exception(f"{file_path} is not an existing file.")
 
-    @staticmethod
-    def is_valid(entry: list[str]) -> bool:
-        """
-        Validates an entry, using casting and conditionals.
+    with open(file_path, "r") as csv_file:
+        lines: list[str] = csv_file.readlines()
 
-        entry: list[str] = [idade, sexo, tensão, colesterol, batimento, temDoença]
-                              0      1     2          3          4           5
+    lines.pop(0)
+    for csv_line in lines:
 
-        :param entry: Given entry to validate.
-        :return: True if the data is valid, False otherwise.
-        """
+        parsed_line: list[str] = csv_line.split(",")
 
-        age: int = int(entry[0])
-        if age < 0 or age > 200:
-            return False
+        if validator(parsed_line):
+            csv_entries.add(Entry.from_line(parsed_line))
 
-        sex: str = entry[1]
-        if sex not in ['M', 'F']:
-            return False
+    csv_entries.finish()
 
-        tension: int = int(entry[2])
-        if tension < 0 or tension > 200:
-            return False
-
-        cholestrol: int = int(entry[3])
-        if cholestrol < 0 or cholestrol > 1000:
-            return False
-
-        bpm: int = int(entry[4])
-        if bpm < 0 or bpm > 300:
-            return False
-
-        has_desease: str = entry[5]
-        if has_desease not in ["1", "0"]:
-            return False
-
-        return True
-
-    def parse(self):
-
-        data = Storage()
-
-        with open(self.source, "r") as file:
-            csv_reader = csv.reader(file)
-
-            next(csv_reader)  # Skip the header line of the generator.
-
-            for entry in csv_reader:
-                if self.is_valid(entry):
-                    data.add_entry(Entry.from_csv_entry(entry))
-
-        return data
+    return csv_entries
 
 
-def main():
-    parser = Parser("datasets/myheart.csv")
-
-    start = perf_counter()
-    data = parser.parse()
-    stop = perf_counter()
-
-    print(f"Finished in {stop - start}s")
-
-    # data.dist_sick_by_gender(display=True)
-    # data.dist_sick_by_age(display=True)
 
 
-if __name__ == '__main__':
-    SystemExit(main())
