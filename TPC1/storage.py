@@ -1,3 +1,5 @@
+from typing import Callable
+
 import matplotlib.pyplot as plot
 import numpy as np
 
@@ -34,6 +36,11 @@ class Storage:
                 "col_sorted": []
             },
 
+        }
+
+        self.display_map: dict = {
+            "age": self.display_ages,
+            "cholestrol": self.display_chol
         }
 
     @staticmethod
@@ -96,6 +103,72 @@ class Storage:
             "total_females": sick_females + healthy_females
         }
 
+    def dist_sick_by_param_interval(self, interval: int = 5, param: str = "age", display: bool = False) -> dict:
+        """
+        Calculate the distribution of the desease by age intervals.
+
+        :param param: Distribution by this parameter.
+        :param interval: The interval size.
+        :param display: Enable/disable plot visualization.
+        :return: Dictionary with the distribution data.
+        """
+
+        key: str = "age_sorted"
+
+        if param == "cholestrol":
+            key = "col_sorted"
+
+        # Query computing.
+        sick: list[int] = list(map(lambda e: getattr(e, param), self.data["sick"][key]))
+        healthy: list[int] = list(map(lambda e: getattr(e, param), self.data["healthy"][key]))
+
+        range_limit: int = max(sick + healthy)
+
+        filtered_sick = self.__filter_by_param__(sick, interval, range_limit)
+        filtered_healthy = self.__filter_by_param__(healthy, interval, range_limit)
+
+        # Display the graph.
+        if display:
+            display_method: Callable[[dict, dict], None] = self.display_map[param]
+            display_method(filtered_sick, filtered_healthy)
+
+        return {
+            "sick": filtered_sick,
+            "healthy": filtered_healthy,
+            "total_sick": len(sick),
+            "total_healthy": len(healthy)
+        }
+
+    def __filter_by_param__(self, values: list[int], interval: int, range_limit: int) -> dict:
+        """
+        Filters a list of sorted ages into their respective bins (age intervals).
+
+        :param values: List containing the values sorted from least to greater.
+        :param interval: The size of interval.
+        :param range_limit: The max value registered on the values list.
+        :return: Dictionary with the intervals with the respective amount of people.
+        """
+
+        result: dict = {}
+
+        superior_limit_group: int = self.__get_group__(range_limit, interval)
+        ranges: list[int] = self.__get_ranges__(-interval, superior_limit_group, interval)
+
+        # Initialize the resulting dictionary with every range with 0.
+        for r in ranges:
+            interval_fmt: str = f"[{r}-{r + interval}["
+            result[interval_fmt] = 0
+
+        # Sort the values by their 'bins'.
+        for value in values:
+            group: int = self.__get_group__(value, interval)
+            interval_fmt: str = f"[{group}-{group + interval}["
+            result[interval_fmt] += 1
+
+        return result
+
+    # Display #
+
     @staticmethod
     def display_gender(sick_males, sick_females, healthy_males, healthy_females) -> None:
         """
@@ -117,39 +190,11 @@ class Storage:
         ax1.legend(["Has Desease", "Healthy"])
 
         ax2.pie([sick_females, healthy_females], autopct='%1.1f%%')
-        ax2.set_title(f"Females ({sick_females + healthy_females} Total)\nSick: {sick_females}, Healthy: {healthy_females}")
+        ax2.set_title(
+            f"Females ({sick_females + healthy_females} Total)\nSick: {sick_females}, Healthy: {healthy_females}")
         ax2.legend(["Has Desease", "Healthy"])
 
         plot.show()
-
-    def dist_sick_by_age(self, age_interval: int = 5, display: bool = False) -> dict:
-        """
-        Calculate the distribution of the desease by age intervals.
-
-        :param age_interval: The interval size.
-        :param display: Enable/disable plot visualization.
-        :return: Dictionary with the distribution data.
-        """
-
-        # Query computing.
-        sick_ages: list[int] = list(map(lambda e: e.age, self.data["sick"]["age_sorted"]))
-        healthy_ages: list[int] = list(map(lambda e: e.age, self.data["healthy"]["age_sorted"]))
-
-        max_age: int = max(sick_ages + healthy_ages)
-
-        sick_by_ages = self.__filter_ages__(sick_ages, age_interval, max_age)
-        healthy_by_ages = self.__filter_ages__(healthy_ages, age_interval, max_age)
-
-        # Display the graph.
-        if display:
-            self.display_ages(sick_by_ages, healthy_by_ages)
-
-        return {
-            "sick": sick_by_ages,
-            "healthy": healthy_by_ages,
-            "total_sick": len(sick_ages),
-            "total_healthy": len(healthy_ages)
-        }
 
     @staticmethod
     def display_ages(sick: dict, healthy: dict) -> None:
@@ -182,28 +227,16 @@ class Storage:
         plot.legend()
         plot.show()
 
-    def __filter_ages__(self, ages: list[int], age_interval: int, superior_limit: int) -> dict:
-        """
-        Filters a list of sorted ages into their respective bins (age intervals).
+    @staticmethod
+    def display_chol(sick: dict, healthy: dict) -> None:
 
-        :param ages: List containing the ages sorted from least to greater.
-        :param age_interval: The size of interval.
-        :param superior_limit: The max age registered on the ages list.
-        :return: Dictionary with the intervals with the respective amount of people.
-        """
+        keys = sick.keys()
+        sick_values = sick.values()
+        healthy_values = healthy.values()
 
-        result: dict = {}
+        ...
 
-        superior_limit_group: int = self.__get_group__(superior_limit, age_interval)
-        ranges: list[int] = self.__get_ranges__(-age_interval, superior_limit_group, age_interval)
-
-        for r in ranges:
-            interval: str = f"[{r}-{r + age_interval}["
-
-            result[interval] = 0
-            result[interval] += len(list(filter(lambda e: r <= e < r + age_interval, ages)))
-
-        return result
+    # Helpers #
 
     @staticmethod
     def __get_group__(age: int, age_interval: int) -> int:
