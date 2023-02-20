@@ -1,5 +1,3 @@
-from typing import Callable
-
 import matplotlib.pyplot as plot
 import numpy as np
 
@@ -36,11 +34,6 @@ class Storage:
                 "col_sorted": []
             },
 
-        }
-
-        self.display_map: dict = {
-            "age": self.display_ages,
-            "cholestrol": self.display_chol
         }
 
     @staticmethod
@@ -89,17 +82,12 @@ class Storage:
             self.display_gender(sick_males, sick_females, healthy_males, healthy_females)
 
         return {
-            "healthy": {
-                "M": healthy_males,
-                "F": healthy_females
-            },
-
-            "sick": {
-                "M": sick_males,
-                "F": sick_females
-            },
-
+            "healthy_males": healthy_males,
+            "healthy_females": healthy_females,
             "total_males": sick_males + healthy_males,
+
+            "sick_males": sick_males,
+            "sick_females": sick_females,
             "total_females": sick_females + healthy_females
         }
 
@@ -129,13 +117,12 @@ class Storage:
 
         # Display the graph.
         if display:
-            display_method: Callable[[dict, dict], None] = self.display_map[param]
-            display_method(filtered_sick, filtered_healthy)
+            self.display_interval_as_bar_plot(filtered_sick, filtered_healthy, param)
 
         return {
             "sick": filtered_sick,
-            "healthy": filtered_healthy,
             "total_sick": len(sick),
+            "healthy": filtered_healthy,
             "total_healthy": len(healthy)
         }
 
@@ -197,44 +184,43 @@ class Storage:
         plot.show()
 
     @staticmethod
-    def display_ages(sick: dict, healthy: dict) -> None:
+    def display_interval_as_bar_plot(sick: dict, healthy: dict, param: str = "age") -> None:
         """
         Display the distribution as a bar graph.
 
-        :param sick: Number of sick people per age interval.
-        :param healthy: Number of healthy people per age interval.
+        :param param: Parameter to use.
+        :param sick: Number of sick people per parameter interval.
+        :param healthy: Number of healthy people per parameter interval.
         :return: None
         """
 
         keys = sick.keys()
+
         sick_values = sick.values()
         healthy_values = healthy.values()
 
-        plot.figure(figsize=(20, 10))
+        # Plotting the data.
+        bar_width = 0.35
+
+        fig, ax = plot.subplots()
+
         xaxis = np.arange(len(keys))
 
-        sick_bar = plot.bar(xaxis - 0.2, sick_values, 0.4, label='Sick')
-        healthy_bar = plot.bar(xaxis + 0.2, healthy_values, 0.4, label='Healthy')
+        sick_bar = ax.bar(xaxis - 0.2, sick_values, width=bar_width, label='Sick')
+        healthy_bar = ax.bar(xaxis + 0.2, healthy_values, width=bar_width, label='Healthy')
 
         plot.xticks(xaxis, keys)
-        plot.xlabel("Age Intervals")
+        plot.xlabel(f"{param.title()} Intervals")
         plot.ylabel("Number of People")
-        plot.title("Distribution of the desease by age intervals.")
+        plot.title("Distribution of the desease by {param} intervals.")
 
         plot.bar_label(sick_bar, fmt='%.2f')
         plot.bar_label(healthy_bar, fmt='%.2f')
 
+        fig.tight_layout()
+
         plot.legend()
         plot.show()
-
-    @staticmethod
-    def display_chol(sick: dict, healthy: dict) -> None:
-
-        keys = sick.keys()
-        sick_values = sick.values()
-        healthy_values = healthy.values()
-
-        ...
 
     # Helpers #
 
