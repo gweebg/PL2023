@@ -1,35 +1,33 @@
 import re
 
+from typing import Optional
 
-def main() -> int:
 
-    on_pattern: str = r"on"
-    off_pattern: str = r"off"
-    number_pattern: str = r"([0-9]+)"
-
-    result: int = 0
-    state: bool = False
+def pure_resolution():
 
     while True:
 
         user_input: str = input("> ")
+        state: bool = False
+        result: int = 0
 
-        matches = re.findall(on_pattern, user_input, re.IGNORECASE)
-        if matches:
-            state = True
+        for index, char in enumerate(user_input.strip()):
 
-        matches = re.findall(off_pattern, user_input, re.IGNORECASE)
-        if matches:
-            state = False
+            next_char: Optional[str] = user_input[index + 1] if (index + 1 < len(user_input)) else None
+            next_next_char: Optional[str] = user_input[index + 2] if (index + 2 < len(user_input)) else None
 
-        if state:
-            matches = re.findall(number_pattern, user_input)
-            for number in matches:
-                result += int(number)
+            if char.isnumeric() and state:
+                result += int(char)
 
-            if '=' in user_input:
-                print(f"sys> {result}")
+            if next_char and char in ['o', 'O'] and next_char in ['n', 'N']:
+                state = True
+
+            if next_next_char and char in ['o', 'O'] and next_char in ['f', 'F'] and next_next_char in ['f', 'F']:
+                state = False
+
+            if char == '=':
+                print(f"sum> {result}")
 
 
 if __name__ == '__main__':
-    SystemExit(main())
+    SystemExit(pure_resolution())
