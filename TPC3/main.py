@@ -7,6 +7,17 @@ from collections import Counter
 
 
 class Entry(TypedDict):
+
+    """
+    Attributes:
+        folder (int): Identifies which folder the process belongs to.
+        date (str): The date of the process as a string formatted like 'YYYY-mm-dd'.
+        name (str): The name of the victim.
+        father (Optional[str]): The name of the victims father.
+        mother (Optional[str]): The name of the victims mother.
+        obs (str): String containing various observations, the family relationship status or process identification.
+    """
+
     folder: int
     date: str
     name: str
@@ -17,10 +28,20 @@ class Entry(TypedDict):
 
 class Storage(BaseModel):
 
+    """
+    Attributes:
+        all (list[Entry]): List of every entry, unordered.
+        by_folder (dict[int, list[Entry]): Dictionary containing every entry by the folder number.
+    """
+
     all: list[Entry]
     by_folder: dict[int, list[Entry]]
 
-    def dist_by_year(self):
+    def dist_by_year(self) -> dict[int, int]:
+        """
+        Distribution of processes by its year.
+        :return: The distribution as a dictionary.
+        """
 
         dist: dict[int, int] = {}
 
@@ -34,6 +55,10 @@ class Storage(BaseModel):
         return dist
 
     def dist_by_names(self) -> dict[str, dict[int, list[str]]]:
+        """
+        Distribution of the victims names over each century.
+        :return: The distribution as a dictionary.
+        """
 
         result: dict[str, dict[int, list[str]]] = {
             "names": {},
@@ -62,6 +87,10 @@ class Storage(BaseModel):
         return result
 
     def dist_by_relationship(self) -> dict[str, int]:
+        """
+        Distribution of the family relationships (Sister, Brother, Nephew, etc.).
+        :return: The distribuiton as a dictionary.
+        """
 
         relationship_exp = r'\,([\w\s]+)\. Proc'
 
@@ -80,10 +109,25 @@ class Storage(BaseModel):
         return result
 
     def as_json(self):
+        """
+        :return: JSON object of the `by_folder` attribute.
+        """
         return json.dumps(self.by_folder)
 
 
 def count_and_reduce(name_list: list[str]) -> list[str]:
+    """
+    From a list only containing names, get the five most used ones.
+
+    Example:
+        l = ["name_c", "name_a", "name_b", "name_a"]
+        l = [("name_c", 1), ("name_a", 2), ("name_b", 1)]
+        l = ["name_a", "name_c", "name_b"]
+
+    :param name_list: The list containing the names to be counted and ranked.
+    :return: List containign the top five most used names.
+    """
+
     counted_names: Counter = Counter(name_list)
     counted_names_as_list: list[tuple[str, int]] = [(elem, counted_names[elem]) for elem in counted_names]
 
@@ -92,6 +136,12 @@ def count_and_reduce(name_list: list[str]) -> list[str]:
 
 
 def get_century(year: int) -> int:
+    """
+    Retrieve the century from a year.
+    :param year: The year (lol?).
+    :return: The century (lol!?).
+    """
+
     if year <= 100:
         return 1
 
@@ -103,6 +153,12 @@ def get_century(year: int) -> int:
 
 
 def pack_entry(match: Optional[re.Match]) -> Entry:
+    """
+    Packs a regex match into an Entry type object.
+    :param match: Regex match.
+    :return: Entry object.
+    """
+
     return Entry(
         folder=int(match[1]), date=match[2], name=match[3],
         father=match[4], mother=match[5], obs=match[6]
@@ -110,6 +166,12 @@ def pack_entry(match: Optional[re.Match]) -> Entry:
 
 
 def parse(file_path: str) -> Storage:
+    """
+    Parses the file using regular expressions and generates a Storage type object containing organizes data.
+    :param file_path: File path to the file to be parsed.
+    :return: Storage object with the read data.
+    """
+
     parser_exp: str = r'(\d+)::(\d{4}\-\d{2}\-\d{2})::([\w\d\s,.]+)::([\w\d\s,.]+)?::([\w\d\s,.]+)?::([\w\d\s,.]+)?::'
 
     result = Storage(all=[], by_folder={})
