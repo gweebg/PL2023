@@ -87,6 +87,8 @@ def csv_to_json(csv_file: Path, delimiter: str = ","):
     row_expr: str = gen_expression_from_header(header)
     row_func: dict[int, str] = get_functions_from_header(header)
 
+    print(row_expr)
+
     for line in lines:
 
         if match := re.match(row_expr, line):
